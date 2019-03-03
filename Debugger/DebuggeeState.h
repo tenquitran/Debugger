@@ -20,9 +20,6 @@ namespace DebuggerApp
 
 		CAtlString getCurrentDirectory() const;
 
-		// Get target process handle.
-		HANDLE getHandle() const;
-
 	private:
 		// Full path to the target executable.
 		const CAtlString m_targetPath;
@@ -31,8 +28,5 @@ namespace DebuggerApp
 		DWORD m_targetPid = {};
 
 		CAtlString m_currentDirectory;
-
-		// Target process handle.
-		CHandle m_hProcess;
 	};
 }

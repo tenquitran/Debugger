@@ -178,8 +178,7 @@ DWORD Core::onCreateProcess(const LPDEBUG_EVENT pDbgEvent)
 	// suspend and resume thread execution with SuspendThread() and ResumeThread().
 	// Be sure to close the handle to the process image file with CloseHandle().
 
-	// TODO: implement
-	//ATLASSERT(FALSE);
+	std::wcout << L"Process " << pDbgEvent->dwProcessId << L" created" << std::endl;
 	return DBG_CONTINUE;
 }
 
@@ -188,8 +187,7 @@ DWORD Core::onCreateThread(const LPDEBUG_EVENT pDbgEvent)
 	// Examine or change the thread's registers with GetThreadContext() and SetThreadContext(); 
 	// and suspend and resume thread execution with SuspendThread() and ResumeThread().
 
-	// TODO: implement
-	//ATLASSERT(FALSE);
+	std::wcout << L"Thread " << pDbgEvent->dwThreadId << L" created" << std::endl;
 	return DBG_CONTINUE;
 }
 
@@ -197,24 +195,49 @@ DWORD Core::onExitProcess(const LPDEBUG_EVENT pDbgEvent)
 {
 	// Display the process exit code.
 
+	DWORD pid = pDbgEvent->dwProcessId;
+
+	CHandle hProcess(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid));
+	if (!hProcess)
+	{
+		std::wcerr << L"OpenProcess() failed: " << GetLastError() << '\n';
+		return DBG_CONTINUE;
+	}
+
 	DWORD exitCode = {};
 
-	if (!GetExitCodeProcess(m_debuggee.getHandle(), &exitCode))
+	if (!GetExitCodeProcess(hProcess, &exitCode))
 	{
 		std::wcerr << L"GetExitCodeProcess() failed: " << GetLastError() << '\n';
 		return DBG_CONTINUE;
 	}
 
-	std::wcout << L"Process exit with code " << exitCode << std::endl;
+	std::wcout << L"Process " << pid << L" exit: code " << exitCode << std::endl;
 	return DBG_CONTINUE;
 }
 
 DWORD Core::onExitThread(const LPDEBUG_EVENT pDbgEvent)
 {
-	// Display the thread's exit code.
+	// Display the thread exit code.
 
-	// TODO: implement
-	//ATLASSERT(FALSE);
+	DWORD tid = pDbgEvent->dwThreadId;
+
+	CHandle hThread(OpenThread(THREAD_QUERY_INFORMATION, FALSE, tid));
+	if (!hThread)
+	{
+		std::wcerr << L"OpenThread() failed: " << GetLastError() << '\n';
+		return DBG_CONTINUE;
+	}
+
+	DWORD exitCode = {};
+
+	if (!GetExitCodeThread(hThread, &exitCode))
+	{
+		std::wcerr << L"GetExitCodeThread() failed: " << GetLastError() << '\n';
+		return DBG_CONTINUE;
+	}
+
+	std::wcout << L"Thread " << tid <<  L" exit: code " << exitCode << std::endl;
 	return DBG_CONTINUE;
 }
 
