@@ -17,7 +17,7 @@ namespace DebuggerApp
 
 	private:
 		std::string m_fileName;
-		int m_lineNumber;
+		int m_lineNumber = {};
 		std::wstring m_message;
 	};
 

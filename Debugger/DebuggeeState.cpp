@@ -26,6 +26,15 @@ DebuggeeState::DebuggeeState(const CAtlString& targetPath, DWORD targetPid /*= {
 	{
 		ATLASSERT(FALSE); throw EXCEPTION(L"Failed to determine current directory");
 	}
+
+	if (m_targetPid > 0)
+	{
+		m_hProcess.Attach(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, m_targetPid));
+		if (!m_hProcess)
+		{
+			ATLASSERT(FALSE); throw EXCEPTION(L"OpenProcess() for target failed: %u", GetLastError());
+		}
+	}
 }
 
 DebuggeeState::~DebuggeeState()
@@ -42,7 +51,29 @@ DWORD DebuggeeState::getTargetPID() const
 	return m_targetPid;
 }
 
+void DebuggeeState::setTargetPID(DWORD pid)
+{
+	m_targetPid = pid;
+
+	if (m_targetPid < 1)
+	{
+		std::wcerr << __FUNCTIONW__ << L": invalid process ID\n";
+		return;
+	}
+
+	m_hProcess.Attach(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, m_targetPid));
+	if (!m_hProcess)
+	{
+		std::wcerr << L"OpenProcess() for target failed: " << GetLastError() << '\n';
+	}
+}
+
 CAtlString DebuggeeState::getCurrentDirectory() const
 {
 	return m_currentDirectory;
+}
+
+HANDLE DebuggeeState::getHandle() const
+{
+	return m_hProcess.m_h;
 }

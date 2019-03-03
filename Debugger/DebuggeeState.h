@@ -16,16 +16,23 @@ namespace DebuggerApp
 		CAtlString getTargetPath() const;
 
 		DWORD getTargetPID() const;
+		void setTargetPID(DWORD pid);
 
 		CAtlString getCurrentDirectory() const;
+
+		// Get target process handle.
+		HANDLE getHandle() const;
 
 	private:
 		// Full path to the target executable.
 		const CAtlString m_targetPath;
 
 		// Process ID of the target.
-		const DWORD m_targetPid;
+		DWORD m_targetPid = {};
 
 		CAtlString m_currentDirectory;
+
+		// Target process handle.
+		CHandle m_hProcess;
 	};
 }

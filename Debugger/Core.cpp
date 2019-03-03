@@ -51,6 +51,8 @@ bool Core::createTargetProcess()
 		ATLASSERT(FALSE); return false;
 	}
 
+	m_debuggee.setTargetPID(pi.dwProcessId);
+
 	// Enter the debugger main loop.
 
 	DEBUG_EVENT dbgEvent = {};
@@ -130,33 +132,39 @@ DWORD Core::onException(const LPDEBUG_EVENT pDbgEvent)
 		// Last chance: Display an appropriate error.
 
 		// TODO: implement
+		ATLASSERT(FALSE);
 		break;
 	case EXCEPTION_BREAKPOINT:
 		// First chance: Display the current instruction and register values.
 
 		// TODO: implement
+		//ATLASSERT(FALSE);
 		break;
 	case EXCEPTION_DATATYPE_MISALIGNMENT:
 		// First chance: Pass this on to the system. 
 		// Last chance: Display an appropriate error.
 
 		// TODO: implement
+		ATLASSERT(FALSE);
 		break;
 	case EXCEPTION_SINGLE_STEP:
 		// First chance: Update the display of the current instruction and register values.
 
 		// TODO: implement
+		ATLASSERT(FALSE);
 		break;
 	case DBG_CONTROL_C:
 		// First chance: Pass this on to the system. 
 		// Last chance: Display an appropriate error.
 
 		// TODO: implement
+		ATLASSERT(FALSE);
 		break;
 	default:
 		// Handle other exceptions.
 
 		// TODO: implement
+		ATLASSERT(FALSE);
 		break;
 	}
 
@@ -171,7 +179,7 @@ DWORD Core::onCreateProcess(const LPDEBUG_EVENT pDbgEvent)
 	// Be sure to close the handle to the process image file with CloseHandle().
 
 	// TODO: implement
-	ATLASSERT(FALSE);
+	//ATLASSERT(FALSE);
 	return DBG_CONTINUE;
 }
 
@@ -181,7 +189,7 @@ DWORD Core::onCreateThread(const LPDEBUG_EVENT pDbgEvent)
 	// and suspend and resume thread execution with SuspendThread() and ResumeThread().
 
 	// TODO: implement
-	ATLASSERT(FALSE);
+	//ATLASSERT(FALSE);
 	return DBG_CONTINUE;
 }
 
@@ -189,8 +197,15 @@ DWORD Core::onExitProcess(const LPDEBUG_EVENT pDbgEvent)
 {
 	// Display the process exit code.
 
-	// TODO: implement
-	ATLASSERT(FALSE);
+	DWORD exitCode = {};
+
+	if (!GetExitCodeProcess(m_debuggee.getHandle(), &exitCode))
+	{
+		std::wcerr << L"GetExitCodeProcess() failed: " << GetLastError() << '\n';
+		return DBG_CONTINUE;
+	}
+
+	std::wcout << L"Process exit with code " << exitCode << std::endl;
 	return DBG_CONTINUE;
 }
 
@@ -199,7 +214,7 @@ DWORD Core::onExitThread(const LPDEBUG_EVENT pDbgEvent)
 	// Display the thread's exit code.
 
 	// TODO: implement
-	ATLASSERT(FALSE);
+	//ATLASSERT(FALSE);
 	return DBG_CONTINUE;
 }
 
@@ -209,7 +224,7 @@ DWORD Core::onLoadDll(const LPDEBUG_EVENT pDbgEvent)
 	// Be sure to close the handle to the loaded DLL with CloseHandle().
 
 	// TODO: implement
-	ATLASSERT(FALSE);
+	//ATLASSERT(FALSE);
 	return DBG_CONTINUE;
 }
 
@@ -218,7 +233,7 @@ DWORD Core::onUnloadDll(const LPDEBUG_EVENT pDbgEvent)
 	// Display a message that the DLL has been unloaded.
 
 	// TODO: implement
-	ATLASSERT(FALSE);
+	//ATLASSERT(FALSE);
 	return DBG_CONTINUE;
 }
 
