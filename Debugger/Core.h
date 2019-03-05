@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DebuggeeState.h"
+#include "Debuggee.h"
 
 
 namespace DebuggerApp
@@ -47,6 +47,6 @@ namespace DebuggerApp
 		DWORD onRip(const LPDEBUG_EVENT pDbgEvent);
 
 	private:
-		DebuggeeState m_debuggee;
+		Debuggee m_debuggee;
 	};
 }

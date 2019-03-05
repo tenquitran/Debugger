@@ -17,6 +17,7 @@
 using namespace ATL;
 
 #include <vector>
+#include <map>
 #include <fstream>
 #include <iostream>
 

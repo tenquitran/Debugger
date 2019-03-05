@@ -30,7 +30,7 @@
     <ClInclude Include="Exception.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DebuggeeState.h">
+    <ClInclude Include="Debuggee.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -47,7 +47,7 @@
     <ClCompile Include="Exception.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DebuggeeState.cpp">
+    <ClCompile Include="Debuggee.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

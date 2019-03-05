@@ -200,7 +200,7 @@ DWORD Core::onExitProcess(const LPDEBUG_EVENT pDbgEvent)
 	CHandle hProcess(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid));
 	if (!hProcess)
 	{
-		std::wcerr << L"OpenProcess() failed: " << GetLastError() << '\n';
+		std::wcerr << __FUNCTIONW__ << L": OpenProcess() failed: " << GetLastError() << '\n';
 		return DBG_CONTINUE;
 	}
 
@@ -208,7 +208,7 @@ DWORD Core::onExitProcess(const LPDEBUG_EVENT pDbgEvent)
 
 	if (!GetExitCodeProcess(hProcess, &exitCode))
 	{
-		std::wcerr << L"GetExitCodeProcess() failed: " << GetLastError() << '\n';
+		std::wcerr << __FUNCTIONW__ << L": GetExitCodeProcess() failed: " << GetLastError() << '\n';
 		return DBG_CONTINUE;
 	}
 
@@ -225,7 +225,7 @@ DWORD Core::onExitThread(const LPDEBUG_EVENT pDbgEvent)
 	CHandle hThread(OpenThread(THREAD_QUERY_INFORMATION, FALSE, tid));
 	if (!hThread)
 	{
-		std::wcerr << L"OpenThread() failed: " << GetLastError() << '\n';
+		std::wcerr << __FUNCTIONW__ << L": OpenThread() failed: " << GetLastError() << '\n';
 		return DBG_CONTINUE;
 	}
 
@@ -233,7 +233,7 @@ DWORD Core::onExitThread(const LPDEBUG_EVENT pDbgEvent)
 
 	if (!GetExitCodeThread(hThread, &exitCode))
 	{
-		std::wcerr << L"GetExitCodeThread() failed: " << GetLastError() << '\n';
+		std::wcerr << __FUNCTIONW__ << L": GetExitCodeThread() failed: " << GetLastError() << '\n';
 		return DBG_CONTINUE;
 	}
 
@@ -246,8 +246,39 @@ DWORD Core::onLoadDll(const LPDEBUG_EVENT pDbgEvent)
 	// Read the debugging information included in the newly loaded DLL. 
 	// Be sure to close the handle to the loaded DLL with CloseHandle().
 
-	// TODO: implement
-	//ATLASSERT(FALSE);
+	LPLOAD_DLL_DEBUG_INFO pLoadDllInfo = &pDbgEvent->u.LoadDll;
+
+	HANDLE hDll = pLoadDllInfo->hFile;
+
+	if (!hDll)
+	{
+		return DBG_CONTINUE;
+	}
+
+	CAtlString dllPath;
+
+	DWORD res = GetFinalPathNameByHandle(hDll, dllPath.GetBufferSetLength(MAX_PATH + 1), MAX_PATH, 0);
+	dllPath.ReleaseBuffer();
+
+	if (!res)
+	{
+		std::wcerr << __FUNCTIONW__ << L": GetFinalPathNameByHandle() failed: " << GetLastError() << '\n';
+	}
+	else
+	{
+		dllPath.TrimLeft(L"\\?");
+
+		ATLASSERT(pLoadDllInfo->lpBaseOfDll);
+		m_debuggee.addDllInfo(pLoadDllInfo->lpBaseOfDll, dllPath);
+
+		std::wcout << "DLL loaded: " << dllPath.GetString() << std::endl;
+	}
+
+	if (!CloseHandle(hDll))
+	{
+		std::wcerr << __FUNCTIONW__ << L": CloseHandle() failed: " << GetLastError() << '\n';
+	}
+
 	return DBG_CONTINUE;
 }
 
@@ -255,8 +286,20 @@ DWORD Core::onUnloadDll(const LPDEBUG_EVENT pDbgEvent)
 {
 	// Display a message that the DLL has been unloaded.
 
-	// TODO: implement
-	//ATLASSERT(FALSE);
+	LPVOID pBaseAddress = pDbgEvent->u.UnloadDll.lpBaseOfDll;
+	ATLASSERT(pBaseAddress);
+
+	CAtlString dllPath = m_debuggee.findDllPath(pBaseAddress);
+
+	if (dllPath.IsEmpty())
+	{
+		std::wcerr << L"No DLL found at the base address " << pBaseAddress << '\n';
+	}
+	else
+	{
+		std::wcout << "DLL unloaded: " << dllPath.GetString() << std::endl;
+	}
+
 	return DBG_CONTINUE;
 }
 
