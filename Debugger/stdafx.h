@@ -20,6 +20,7 @@ using namespace ATL;
 #include <map>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 //////////////////////////////////////////////////////////////////////////
 

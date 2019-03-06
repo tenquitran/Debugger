@@ -164,8 +164,10 @@ DWORD Core::onException(const LPDEBUG_EVENT pDbgEvent)
 		// Handle other exceptions.
 
 		// TODO: implement
-		ATLASSERT(FALSE);
-		break;
+		//ATLASSERT(FALSE);
+
+		// Returning DBG_CONTINUE here can make the debuggee unresponsive.
+		return DBG_EXCEPTION_NOT_HANDLED;
 	}
 
 	return DBG_CONTINUE;
@@ -307,8 +309,46 @@ DWORD Core::onOutputDebugString(const LPDEBUG_EVENT pDbgEvent)
 {
 	// Display the output debugging string.
 
-	// TODO: implement
-	ATLASSERT(FALSE);
+	CHandle hProcess(OpenProcess(PROCESS_VM_READ, FALSE, pDbgEvent->dwProcessId));
+	if (!hProcess)
+	{
+		std::wcerr << __FUNCTIONW__ << L": OpenProcess() failed: " << GetLastError() << '\n';
+		return DBG_CONTINUE;
+	}
+
+	LPOUTPUT_DEBUG_STRING_INFO pDbgStr = &pDbgEvent->u.DebugString;
+
+	SIZE_T cbRead = {};
+
+	if (pDbgStr->fUnicode)
+	{
+		std::unique_ptr<WCHAR[]> spBuff = std::make_unique<WCHAR[]>(pDbgStr->nDebugStringLength + 1);
+
+		if (   !ReadProcessMemory(hProcess, pDbgStr->lpDebugStringData, spBuff.get(), pDbgStr->nDebugStringLength * sizeof(WCHAR), &cbRead)
+			|| 0 == cbRead)
+		{
+			std::wcerr << __FUNCTIONW__ << L": ReadProcessMemory() failed: " << GetLastError() << '\n';
+		}
+		else
+		{
+			std::wcout << spBuff.get() << std::endl;
+		}
+	} 
+	else
+	{
+		std::unique_ptr<CHAR[]> spBuff = std::make_unique<CHAR[]>(pDbgStr->nDebugStringLength + 1);
+
+		if (   !ReadProcessMemory(hProcess, pDbgStr->lpDebugStringData, spBuff.get(), pDbgStr->nDebugStringLength * sizeof(CHAR), &cbRead)
+			|| 0 == cbRead)
+		{
+			std::wcerr << __FUNCTIONW__ << L": ReadProcessMemory() failed: " << GetLastError() << '\n';
+		}
+		else
+		{
+			std::cout << spBuff.get() << std::endl;
+		}
+	}
+
 	return DBG_CONTINUE;
 }
 
