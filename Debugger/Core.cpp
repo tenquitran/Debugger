@@ -180,6 +180,10 @@ DWORD Core::onCreateProcess(const LPDEBUG_EVENT pDbgEvent)
 	// suspend and resume thread execution with SuspendThread() and ResumeThread().
 	// Be sure to close the handle to the process image file with CloseHandle().
 
+	LPCREATE_PROCESS_DEBUG_INFO pProcess = &pDbgEvent->u.CreateProcessInfo;
+
+	m_debuggee.setProcessInfo(pProcess);
+
 	std::wcout << L"Process " << pDbgEvent->dwProcessId << L" created" << std::endl;
 	return DBG_CONTINUE;
 }
@@ -199,22 +203,18 @@ DWORD Core::onExitProcess(const LPDEBUG_EVENT pDbgEvent)
 
 	DWORD pid = pDbgEvent->dwProcessId;
 
-	CHandle hProcess(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid));
-	if (!hProcess)
-	{
-		std::wcerr << __FUNCTIONW__ << L": OpenProcess() failed: " << GetLastError() << '\n';
-		return DBG_CONTINUE;
-	}
-
 	DWORD exitCode = {};
 
-	if (!GetExitCodeProcess(hProcess, &exitCode))
+	if (!GetExitCodeProcess(m_debuggee.getProcessHandle(), &exitCode))
 	{
 		std::wcerr << __FUNCTIONW__ << L": GetExitCodeProcess() failed: " << GetLastError() << '\n';
 		return DBG_CONTINUE;
 	}
 
 	std::wcout << L"Process " << pid << L" exit: code " << exitCode << std::endl;
+
+	//CloseHandle(m_debuggee.getProcessHandle());
+
 	return DBG_CONTINUE;
 }
 
@@ -309,13 +309,6 @@ DWORD Core::onOutputDebugString(const LPDEBUG_EVENT pDbgEvent)
 {
 	// Display the output debugging string.
 
-	CHandle hProcess(OpenProcess(PROCESS_VM_READ, FALSE, pDbgEvent->dwProcessId));
-	if (!hProcess)
-	{
-		std::wcerr << __FUNCTIONW__ << L": OpenProcess() failed: " << GetLastError() << '\n';
-		return DBG_CONTINUE;
-	}
-
 	LPOUTPUT_DEBUG_STRING_INFO pDbgStr = &pDbgEvent->u.DebugString;
 
 	SIZE_T cbRead = {};
@@ -324,7 +317,7 @@ DWORD Core::onOutputDebugString(const LPDEBUG_EVENT pDbgEvent)
 	{
 		std::unique_ptr<WCHAR[]> spBuff = std::make_unique<WCHAR[]>(pDbgStr->nDebugStringLength + 1);
 
-		if (   !ReadProcessMemory(hProcess, pDbgStr->lpDebugStringData, spBuff.get(), pDbgStr->nDebugStringLength * sizeof(WCHAR), &cbRead)
+		if (   !ReadProcessMemory(m_debuggee.getProcessHandle(), pDbgStr->lpDebugStringData, spBuff.get(), pDbgStr->nDebugStringLength * sizeof(WCHAR), &cbRead)
 			|| 0 == cbRead)
 		{
 			std::wcerr << __FUNCTIONW__ << L": ReadProcessMemory() failed: " << GetLastError() << '\n';
@@ -338,7 +331,7 @@ DWORD Core::onOutputDebugString(const LPDEBUG_EVENT pDbgEvent)
 	{
 		std::unique_ptr<CHAR[]> spBuff = std::make_unique<CHAR[]>(pDbgStr->nDebugStringLength + 1);
 
-		if (   !ReadProcessMemory(hProcess, pDbgStr->lpDebugStringData, spBuff.get(), pDbgStr->nDebugStringLength * sizeof(CHAR), &cbRead)
+		if (   !ReadProcessMemory(m_debuggee.getProcessHandle(), pDbgStr->lpDebugStringData, spBuff.get(), pDbgStr->nDebugStringLength * sizeof(CHAR), &cbRead)
 			|| 0 == cbRead)
 		{
 			std::wcerr << __FUNCTIONW__ << L": ReadProcessMemory() failed: " << GetLastError() << '\n';

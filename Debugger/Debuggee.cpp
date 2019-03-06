@@ -32,6 +32,27 @@ Debuggee::~Debuggee()
 {
 }
 
+void Debuggee::setProcessInfo(LPCREATE_PROCESS_DEBUG_INFO pProcessInfo)
+{
+	if (!pProcessInfo->hProcess)
+	{
+		std::wcerr << L"Process handle is NULL\n";
+		ATLASSERT(FALSE);
+	}
+	else
+	{
+		m_hProcess = pProcessInfo->hProcess;
+	}
+
+	// TODO: other data
+	;
+}
+
+HANDLE Debuggee::getProcessHandle() const
+{
+	return m_hProcess;
+}
+
 CAtlString Debuggee::getTargetPath() const
 {
 	return m_targetPath;

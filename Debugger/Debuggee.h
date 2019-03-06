@@ -13,6 +13,11 @@ namespace DebuggerApp
 
 		virtual ~Debuggee();
 
+		// Set process-related information.
+		void setProcessInfo(LPCREATE_PROCESS_DEBUG_INFO pProcessInfo);
+
+		HANDLE getProcessHandle() const;
+
 		CAtlString getTargetPath() const;
 
 		DWORD getTargetPID() const;
@@ -35,6 +40,9 @@ namespace DebuggerApp
 
 		// Process ID of the target.
 		DWORD m_targetPid = {};
+
+		// Target process handle.
+		HANDLE m_hProcess = { nullptr };
 
 		CAtlString m_currentDirectory;
 
