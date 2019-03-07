@@ -6,10 +6,9 @@ namespace DebuggerApp
 	class Debuggee
 	{
 	public:
-		// Parameters:
-		// targetPath - full path to the target executable.
-		// targetPid - target process ID.
-		explicit Debuggee(const CAtlString& targetPath, DWORD targetPid = {});
+		// Parameters: imagePath - full path to the executable image;
+		//             pid - process ID.
+		explicit Debuggee(const CAtlString& imagePath, DWORD pid = {});
 
 		virtual ~Debuggee();
 
@@ -18,14 +17,18 @@ namespace DebuggerApp
 
 		HANDLE getProcessHandle() const;
 
-		CAtlString getTargetPath() const;
+		CAtlString getImagePath() const;
 
-		DWORD getTargetPID() const;
-		void setTargetPID(DWORD pid);
+		DWORD getPID() const;
+		void setPID(DWORD pid);
 
 		CAtlString getCurrentDirectory() const;
 
-		// Add info about the loaded DLL.
+		// Add info about thread.
+		// Parameters: hThread - thread handle.
+		void addThreadInfo(HANDLE hThread);
+
+		// Add info about loaded DLL.
 		// Parameters: pBase - base address;
 		//             path - full path.
 		void addDllInfo(LPVOID pBase, const CAtlString& path);
@@ -36,15 +39,19 @@ namespace DebuggerApp
 
 	private:
 		// Full path to the target executable.
-		const CAtlString m_targetPath;
+		const CAtlString m_imagePath;
 
-		// Process ID of the target.
-		DWORD m_targetPid = {};
+		// Process ID.
+		DWORD m_processId = {};
 
 		// Target process handle.
 		HANDLE m_hProcess = { nullptr };
 
 		CAtlString m_currentDirectory;
+
+		// Threads.
+		// Key: thread ID; value: thread handle.
+		std::map<DWORD, HANDLE> m_threads;
 
 		// Loaded DLLs.
 		// Key: base address; value: full path.

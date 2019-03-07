@@ -8,18 +8,18 @@ using namespace DebuggerApp;
 //////////////////////////////////////////////////////////////////////////
 
 
-Debuggee::Debuggee(const CAtlString& targetPath, DWORD targetPid /*= {}*/)
-	: m_targetPath(targetPath), m_targetPid(targetPid)
+Debuggee::Debuggee(const CAtlString& imagePath, DWORD pid /*= {}*/)
+	: m_imagePath(imagePath), m_processId(pid)
 {
-	if (m_targetPath.IsEmpty())
+	if (m_imagePath.IsEmpty())
 	{
 		ATLASSERT(FALSE); throw EXCEPTION(L"Target path empty");
 	}
 
-	int pos = m_targetPath.ReverseFind('\\');
+	int pos = m_imagePath.ReverseFind('\\');
 	if (-1 != pos)
 	{
-		m_currentDirectory = m_targetPath.Left(pos);
+		m_currentDirectory = m_imagePath.Left(pos);
 	}
 
 	if (m_currentDirectory.IsEmpty())
@@ -34,6 +34,7 @@ Debuggee::~Debuggee()
 
 void Debuggee::setProcessInfo(LPCREATE_PROCESS_DEBUG_INFO pProcessInfo)
 {
+	// Store process handle.
 	if (!pProcessInfo->hProcess)
 	{
 		std::wcerr << L"Process handle is NULL\n";
@@ -44,8 +45,16 @@ void Debuggee::setProcessInfo(LPCREATE_PROCESS_DEBUG_INFO pProcessInfo)
 		m_hProcess = pProcessInfo->hProcess;
 	}
 
-	// TODO: other data
-	;
+	// Store initial thread ID and handle.
+	if (!pProcessInfo->hThread)
+	{
+		std::wcerr << L"Initial thread handle is NULL\n";
+		ATLASSERT(FALSE);
+	}
+	else
+	{
+		addThreadInfo(pProcessInfo->hThread);
+	}
 }
 
 HANDLE Debuggee::getProcessHandle() const
@@ -53,21 +62,21 @@ HANDLE Debuggee::getProcessHandle() const
 	return m_hProcess;
 }
 
-CAtlString Debuggee::getTargetPath() const
+CAtlString Debuggee::getImagePath() const
 {
-	return m_targetPath;
+	return m_imagePath;
 }
 
-DWORD Debuggee::getTargetPID() const
+DWORD Debuggee::getPID() const
 {
-	return m_targetPid;
+	return m_processId;
 }
 
-void Debuggee::setTargetPID(DWORD pid)
+void Debuggee::setPID(DWORD pid)
 {
-	m_targetPid = pid;
+	m_processId = pid;
 
-	if (m_targetPid < 1)
+	if (m_processId < 1)
 	{
 		std::wcerr << __FUNCTIONW__ << L": invalid process ID\n";
 		return;
@@ -77,6 +86,19 @@ void Debuggee::setTargetPID(DWORD pid)
 CAtlString Debuggee::getCurrentDirectory() const
 {
 	return m_currentDirectory;
+}
+
+void Debuggee::addThreadInfo(HANDLE hThread)
+{
+	DWORD tid = GetThreadId(hThread);
+
+	if (0 == tid)
+	{
+		std::wcerr << __FUNCTIONW__ << L": GetThreadId() failed: " << GetLastError() << '\n';
+		ATLASSERT(FALSE);
+	}
+
+	m_threads.insert(std::make_pair(tid, hThread));
 }
 
 void Debuggee::addDllInfo(LPVOID pBase, const CAtlString& path)

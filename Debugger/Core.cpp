@@ -37,21 +37,21 @@ bool Core::createTargetProcess()
 	// After the CreateProcess call, PROCESS_INFORMATION will contain the process and thread IDs and handles.
 	PROCESS_INFORMATION pi = {};
 
-	const CAtlString targetPath = m_debuggee.getTargetPath();
+	const CAtlString targetPath = m_debuggee.getImagePath();
 
 	const CAtlString currDirectory = m_debuggee.getCurrentDirectory();
 
 	const DWORD creationFlags = DEBUG_PROCESS;
 
 	if (!CreateProcess(
-		targetPath, nullptr, nullptr, nullptr, FALSE, creationFlags, nullptr,
-		(currDirectory.IsEmpty() ? nullptr : currDirectory.GetString()), &si, &pi))
+			targetPath, nullptr, nullptr, nullptr, FALSE, creationFlags, nullptr,
+			(currDirectory.IsEmpty() ? nullptr : currDirectory.GetString()), &si, &pi))
 	{
 		std::wcerr << L"CreateProcess() failed: " << GetLastError() << '\n';
 		ATLASSERT(FALSE); return false;
 	}
 
-	m_debuggee.setTargetPID(pi.dwProcessId);
+	m_debuggee.setPID(pi.dwProcessId);
 
 	// Enter the debugger main loop.
 
@@ -194,6 +194,9 @@ DWORD Core::onCreateThread(const LPDEBUG_EVENT pDbgEvent)
 	// and suspend and resume thread execution with SuspendThread() and ResumeThread().
 
 	std::wcout << L"Thread " << pDbgEvent->dwThreadId << L" created" << std::endl;
+
+	m_debuggee.addThreadInfo(pDbgEvent->u.CreateThread.hThread);
+
 	return DBG_CONTINUE;
 }
 
@@ -347,7 +350,31 @@ DWORD Core::onOutputDebugString(const LPDEBUG_EVENT pDbgEvent)
 
 DWORD Core::onRip(const LPDEBUG_EVENT pDbgEvent)
 {
-	// TODO: implement
-	ATLASSERT(FALSE);
+	LPRIP_INFO pRip = &pDbgEvent->u.RipInfo;
+
+	CAtlString info;
+
+	switch (pRip->dwType)
+	{
+	case 0:
+		info = L"no additional info";
+		break;
+	case SLE_ERROR:
+		info = L"invalid data were passed to the function that failed. This caused the application to fail.";
+		break;
+	case SLE_MINORERROR:
+		info = L"indicates that invalid data were passed to the function, but the error probably will not cause the application to fail.";
+		break;
+	case SLE_WARNING:
+		info = L"potentially invalid data were passed to the function, but the function completed processing.";
+		break;
+	default:
+		info = L"unknown code";
+		ATLASSERT(FALSE); break;
+	}
+
+	std::wcout << L"RIP: debuggee died outside of the system debugger\'s control. Error code: " << pRip->dwError 
+		       << L"Additional info: " << info.GetString() << '\n';
+
 	return DBG_CONTINUE;
 }
